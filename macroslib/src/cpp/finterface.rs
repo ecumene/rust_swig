@@ -420,8 +420,8 @@ struct C_{interface_name} {{
 
 #include <cassert>
 
-#include "{c_interface_struct_header}"
 {includes}
+#include "{c_interface_struct_header}"
 
 namespace {namespace_name} {{
 {doc_comments}

@@ -102,8 +102,8 @@ extern "C" {{
 //for std::conditional
 #include <type_traits>
 
-#include "c_{class_dot_name}.h"
 {includes}
+#include "c_{class_dot_name}.h"
 
 namespace {namespace} {{
 
