@@ -222,6 +222,7 @@ May be you need to use `private constructor = empty;` syntax?",
                     correspoding_rust_type: dummy_rust_ty.clone(),
                 },
                 input: vec![],
+                input_name_lookup: vec![],
             },
             false,
         )?;

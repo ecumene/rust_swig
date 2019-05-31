@@ -148,6 +148,23 @@ fn parse_doc_comments(input: ParseStream) -> syn::Result<Vec<String>> {
     Ok(doc_comments)
 }
 
+//TODO: C style params
+fn parse_arg_names(input: &Vec<String>) -> syn::Result<Vec<String>> {
+    let mut arg_names = vec![];
+    for doc in input {
+        for line in doc.lines() {
+            let words: Vec<&str> = line.split(" ").collect();
+            for i in 0..words.len() {
+                if words[i] == "@param" {
+                    arg_names.push(String::from(words[i + 1]));
+                    break;
+                }
+            }
+        }
+    }
+    Ok(arg_names)
+}
+
 fn do_parse_foreigner_class(lang: Language, input: ParseStream) -> syn::Result<ForeignerClassInfo> {
     let Attrs {
         doc_comments: class_doc_comments,
@@ -176,6 +193,7 @@ fn do_parse_foreigner_class(lang: Language, input: ParseStream) -> syn::Result<F
 
     while !content.is_empty() {
         let doc_comments = parse_doc_comments(&&content)?;
+        let input_name_lookup = parse_arg_names(&doc_comments)?;
         let mut access = if content.peek(kw::private) {
             content.parse::<kw::private>()?;
             MethodAccess::Private
@@ -278,6 +296,7 @@ fn do_parse_foreigner_class(lang: Language, input: ParseStream) -> syn::Result<F
                 name_alias: None,
                 access,
                 doc_comments,
+                input_name_lookup,
             });
             has_dummy_constructor = true;
             continue;
@@ -399,6 +418,7 @@ fn do_parse_foreigner_class(lang: Language, input: ParseStream) -> syn::Result<F
             name_alias: func_name_alias,
             access,
             doc_comments,
+            input_name_lookup
         });
     }
 
@@ -481,6 +501,7 @@ impl Parse for ForeignInterfaceParser {
 
         while !item_parser.is_empty() {
             let doc_comments = parse_doc_comments(&item_parser)?;
+            let input_name_lookup = parse_arg_names(&doc_comments)?;
             let func_name = item_parser.parse::<Ident>()?;
             if func_name == "self_type" {
                 self_type = Some(item_parser.call(syn::Path::parse_mod_style)?);
@@ -508,6 +529,7 @@ impl Parse for ForeignInterfaceParser {
                     output: out_type,
                 },
                 doc_comments,
+                input_name_lookup,
             });
         }
 

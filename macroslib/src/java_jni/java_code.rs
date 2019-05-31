@@ -409,10 +409,15 @@ fn args_with_java_types(
             Some(NullAnnotation::Nullable) if external && use_null_annotation => "@Nullable ",
             _ => "",
         };
-        if i == (method.input.len() - 1) {
-            write!(&mut res, "{}{} a{}", annotation, type_name, i)
+        let arg_name = if method.input_name_lookup.len() > i {
+            method.input_name_lookup[i].to_string()
         } else {
-            write!(&mut res, "{}{} a{}, ", annotation, type_name, i)
+            format!("a{}", i)
+        };
+        if i == (method.input.len() - 1) {
+            write!(&mut res, "{}{} {}", annotation, type_name, arg_name)
+        } else {
+            write!(&mut res, "{}{} {}, ", annotation, type_name, arg_name)
         }
         .map_err(&fmt_write_err_map)?;
     }
@@ -438,16 +443,19 @@ fn list_of_args_for_call_method(
 
     for (i, arg) in f_method.input.iter().enumerate() {
         let need_conv = flags.contains(ArgsFormatFlags::INTERNAL) && arg.java_converter.is_some();
-        if i == (f_method.input.len() - 1) {
-            if need_conv {
-                write!(&mut res, "a{}C0", i)
-            } else {
-                write!(&mut res, "a{}", i)
-            }
-        } else if need_conv {
-            write!(&mut res, "a{}C0, ", i)
+        let arg_name = if f_method.input_name_lookup.len() > i {
+            f_method.input_name_lookup[i].to_string()
         } else {
-            write!(&mut res, "a{}, ", i)
+            if need_conv {
+                format!("a{}C0", i)
+            } else {
+                format!("a{}", i)
+            }
+        };
+        if i == (f_method.input.len() - 1) {
+            write!(&mut res, "{}", arg_name)
+        } else{
+            write!(&mut res, "{}, ", arg_name)
         }
         .map_err(|err| format!("write fmt failed: {}", err))?;
     }

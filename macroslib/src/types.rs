@@ -84,6 +84,7 @@ pub(crate) struct ForeignerMethod {
     pub(crate) name_alias: Option<Ident>,
     pub(crate) access: MethodAccess,
     pub(crate) doc_comments: Vec<String>,
+    pub(crate) input_name_lookup: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -201,4 +202,5 @@ pub(crate) struct ForeignInterfaceMethod {
     pub(crate) rust_name: syn::Path,
     pub(crate) fn_decl: FnDecl,
     pub(crate) doc_comments: Vec<String>,
+    pub(crate) input_name_lookup: Vec<String>,
 }
