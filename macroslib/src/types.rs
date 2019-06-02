@@ -2,16 +2,18 @@ use proc_macro2::{Ident, Span};
 
 use syn::{parse_quote, spanned::Spanned, Token, Type};
 
+use smol_str::SmolStr;
+
 use crate::{
     error::{DiagnosticError, Result, SourceIdSpan},
     source_registry::SourceId,
 };
 
 #[derive(Debug, Clone)]
-pub(crate) struct ForeignerClassInfo {
+pub(crate) struct ForeignerClassInfo<T> {
     pub(crate) src_id: SourceId,
     pub(crate) name: Ident,
-    pub(crate) methods: Vec<ForeignerMethod>,
+    pub(crate) methods: Vec<ForeignerMethod<T>>,
     pub(crate) self_type: Option<Type>,
     pub(crate) foreigner_code: String,
     /// For example if we have `fn new(x: X) -> Result<Y, Z>`, then Result<Y, Z>
@@ -20,7 +22,7 @@ pub(crate) struct ForeignerClassInfo {
     pub(crate) copy_derived: bool,
 }
 
-impl ForeignerClassInfo {
+impl <T> ForeignerClassInfo<T> {
     pub(crate) fn span(&self) -> Span {
         self.name.span()
     }
@@ -77,33 +79,33 @@ impl ForeignerClassInfo {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct ForeignerMethod {
+pub(crate) struct ForeignerMethod<T> {
     pub(crate) variant: MethodVariant,
     pub(crate) rust_id: syn::Path,
-    pub(crate) fn_decl: FnDecl,
+    pub(crate) fn_decl: FnDecl<T>,
     pub(crate) name_alias: Option<Ident>,
     pub(crate) access: MethodAccess,
     pub(crate) doc_comments: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct FnDecl {
+pub(crate) struct FnDecl<T> {
     pub(crate) span: Span,
-    pub(crate) inputs: syn::punctuated::Punctuated<syn::FnArg, Token![,]>,
+    pub(crate) inputs: Vec<T>,
     pub(crate) output: syn::ReturnType,
 }
 
-impl From<syn::FnDecl> for crate::types::FnDecl {
+impl <T: From<syn::FnArg>> From<syn::FnDecl> for crate::types::FnDecl<T> {
     fn from(x: syn::FnDecl) -> Self {
         crate::types::FnDecl {
             span: x.fn_token.span(),
-            inputs: x.inputs,
+            inputs: x.inputs.iter().map(|x| T::from(*x)).collect(),
             output: x.output,
         }
     }
 }
 
-impl ForeignerMethod {
+impl <T> ForeignerMethod<T> {
     pub(crate) fn short_name(&self) -> String {
         if let Some(ref name) = self.name_alias {
             name.to_string()
@@ -179,15 +181,15 @@ pub(crate) struct ForeignEnumItem {
     pub(crate) doc_comments: Vec<String>,
 }
 
-pub(crate) struct ForeignInterface {
+pub(crate) struct ForeignInterface<T> {
     pub(crate) src_id: SourceId,
     pub(crate) name: Ident,
     pub(crate) self_type: syn::Path,
     pub(crate) doc_comments: Vec<String>,
-    pub(crate) items: Vec<ForeignInterfaceMethod>,
+    pub(crate) items: Vec<ForeignInterfaceMethod<T>>,
 }
 
-impl ForeignInterface {
+impl <T> ForeignInterface<T>  {
     pub(crate) fn span(&self) -> Span {
         self.name.span()
     }
@@ -196,9 +198,11 @@ impl ForeignInterface {
     }
 }
 
-pub(crate) struct ForeignInterfaceMethod {
+pub(crate) struct ForeignInterfaceMethod<T> {
     pub(crate) name: Ident,
     pub(crate) rust_name: syn::Path,
-    pub(crate) fn_decl: FnDecl,
+    pub(crate) fn_decl: FnDecl<T>,
     pub(crate) doc_comments: Vec<String>,
 }
+
+pub(crate) struct ValidFnArg((SmolStr, Span), Type);

@@ -28,7 +28,7 @@ use crate::{
     },
     types::{
         ForeignEnumInfo, ForeignInterface, ForeignerClassInfo, ForeignerMethod, MethodAccess,
-        MethodVariant,
+        MethodVariant, ValidFnArg
     },
     CppConfig, LanguageGenerator, SourceCode, TypeMap,
 };
@@ -128,8 +128,8 @@ impl ForeignMethodSignature for CppForeignMethodSignature {
 }
 
 struct MethodContext<'a> {
-    class: &'a ForeignerClassInfo,
-    method: &'a ForeignerMethod,
+    class: &'a ForeignerClassInfo<ValidFnArg>,
+    method: &'a ForeignerMethod<ValidFnArg>,
     f_method: &'a CppForeignMethodSignature,
     c_func_name: &'a str,
     decl_func_args: &'a str,
@@ -138,7 +138,7 @@ struct MethodContext<'a> {
 }
 
 impl LanguageGenerator for CppConfig {
-    fn register_class(&self, conv_map: &mut TypeMap, class: &ForeignerClassInfo) -> Result<()> {
+    fn register_class(&self, conv_map: &mut TypeMap, class: &ForeignerClassInfo<ValidFnArg>) -> Result<()> {
         class
             .validate_class()
             .map_err(|err| DiagnosticError::new(class.src_id, class.span(), err))?;
@@ -256,7 +256,7 @@ impl LanguageGenerator for CppConfig {
         &self,
         conv_map: &mut TypeMap,
         _: usize,
-        class: &ForeignerClassInfo,
+        class: &ForeignerClassInfo<ValidFnArg>,
     ) -> Result<Vec<TokenStream>> {
         debug!(
             "generate: begin for {}, this_type_for_method {:?}",
@@ -330,7 +330,7 @@ May be you need to use `private constructor = empty;` syntax?",
         &self,
         conv_map: &mut TypeMap,
         pointer_target_width: usize,
-        interface: &ForeignInterface,
+        interface: &ForeignInterface<ValidFnArg>,
     ) -> Result<Vec<TokenStream>> {
         let f_methods = find_suitable_ftypes_for_interace_methods(conv_map, interface, self)?;
         cpp_code::generate_for_interface(
@@ -385,7 +385,7 @@ May be you need to use `private constructor = empty;` syntax?",
 
 fn find_suitable_foreign_types_for_methods(
     conv_map: &mut TypeMap,
-    class: &ForeignerClassInfo,
+    class: &ForeignerClassInfo<ValidFnArg>,
     cpp_cfg: &CppConfig,
 ) -> Result<Vec<CppForeignMethodSignature>> {
     let mut ret = Vec::<CppForeignMethodSignature>::with_capacity(class.methods.len());
@@ -440,7 +440,7 @@ fn find_suitable_foreign_types_for_methods(
     Ok(ret)
 }
 
-fn c_func_name(class: &ForeignerClassInfo, method: &ForeignerMethod) -> String {
+fn c_func_name(class: &ForeignerClassInfo<ValidFnArg>, method: &ForeignerMethod<ValidFnArg>) -> String {
     format!(
         "{access}{class_name}_{func}",
         access = match method.access {
@@ -636,7 +636,7 @@ impl SwigFrom<Option<{rust_enum_name}>> for Option<u32> {{
 
 fn find_suitable_ftypes_for_interace_methods(
     conv_map: &mut TypeMap,
-    interace: &ForeignInterface,
+    interace: &ForeignInterface<ValidFnArg>,
     cpp_cfg: &CppConfig,
 ) -> Result<Vec<CppForeignMethodSignature>> {
     let void_sym = "void";
@@ -693,7 +693,7 @@ fn n_arguments_list(n: usize) -> String {
 fn rust_code_generate_interface(
     conv_map: &mut TypeMap,
     pointer_target_width: usize,
-    interface: &ForeignInterface,
+    interface: &ForeignInterface<ValidFnArg>,
     methods_sign: &[CppForeignMethodSignature],
 ) -> Result<Vec<TokenStream>> {
     use std::fmt::Write;

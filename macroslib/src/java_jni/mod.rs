@@ -22,7 +22,7 @@ use crate::{
         ty::RustType, ForeignMethodSignature, ForeignTypeInfo, FROM_VAR_TEMPLATE, TO_VAR_TEMPLATE,
     },
     types::{
-        ForeignEnumInfo, ForeignInterface, ForeignerClassInfo, ForeignerMethod, MethodVariant,
+        ForeignEnumInfo, ForeignInterface, ForeignerClassInfo, ForeignerMethod, MethodVariant, ValidFnArg
     },
     JavaConfig, LanguageGenerator, SourceCode, TypeMap,
 };
@@ -105,7 +105,7 @@ impl LanguageGenerator for JavaConfig {
         conv_map.find_or_alloc_rust_type_no_src_id(&parse_type! { jlong });
         Ok(())
     }
-    fn register_class(&self, conv_map: &mut TypeMap, class: &ForeignerClassInfo) -> Result<()> {
+    fn register_class(&self, conv_map: &mut TypeMap, class: &ForeignerClassInfo<ValidFnArg>) -> Result<()> {
         class
             .validate_class()
             .map_err(|err| DiagnosticError::new(class.src_id, class.span(), &err))?;
@@ -216,7 +216,7 @@ impl LanguageGenerator for JavaConfig {
         &self,
         conv_map: &mut TypeMap,
         _: usize,
-        class: &ForeignerClassInfo,
+        class: &ForeignerClassInfo<ValidFnArg>,
     ) -> Result<Vec<TokenStream>> {
         debug!(
             "generate: begin for {}, this_type_for_method {:?}",
@@ -269,7 +269,7 @@ impl LanguageGenerator for JavaConfig {
         &self,
         conv_map: &mut TypeMap,
         pointer_target_width: usize,
-        interface: &ForeignInterface,
+        interface: &ForeignInterface<ValidFnArg>,
     ) -> Result<Vec<TokenStream>> {
         let f_methods = find_suitable_ftypes_for_interace_methods(conv_map, interface)?;
         java_code::generate_java_code_for_interface(
@@ -301,7 +301,7 @@ impl LanguageGenerator for JavaConfig {
     }
 }
 
-fn method_name(method: &ForeignerMethod, f_method: &JniForeignMethodSignature) -> String {
+fn method_name(method: &ForeignerMethod<ValidFnArg>, f_method: &JniForeignMethodSignature) -> String {
     let need_conv = f_method.input.iter().any(|v| v.java_converter.is_some());
     match method.variant {
         MethodVariant::StaticMethod if !need_conv => method.short_name().as_str().to_string(),
@@ -314,7 +314,7 @@ fn method_name(method: &ForeignerMethod, f_method: &JniForeignMethodSignature) -
 
 fn find_suitable_ftypes_for_interace_methods(
     conv_map: &mut TypeMap,
-    interace: &ForeignInterface,
+    interace: &ForeignInterface<ValidFnArg>,
 ) -> Result<Vec<JniForeignMethodSignature>> {
     let void_sym = "void";
     let dummy_ty = parse_type! { () };
@@ -348,7 +348,7 @@ fn find_suitable_ftypes_for_interace_methods(
 
 fn find_suitable_foreign_types_for_methods(
     conv_map: &mut TypeMap,
-    class: &ForeignerClassInfo,
+    class: &ForeignerClassInfo<ValidFnArg>,
 ) -> Result<Vec<JniForeignMethodSignature>> {
     let mut ret = Vec::<JniForeignMethodSignature>::with_capacity(class.methods.len());
     let empty_symbol = "";
@@ -417,7 +417,7 @@ fn java_class_name_to_jni(full_name: &str) -> String {
     full_name.replace(".", "/")
 }
 
-fn calc_this_type_for_method(tm: &TypeMap, class: &ForeignerClassInfo) -> Option<Type> {
+fn calc_this_type_for_method(tm: &TypeMap, class: &ForeignerClassInfo<ValidFnArg>) -> Option<Type> {
     if let Some(constructor_ret_type) = class.constructor_ret_type.as_ref() {
         Some(
             if_result_return_ok_err_types(

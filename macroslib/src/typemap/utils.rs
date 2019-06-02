@@ -10,7 +10,7 @@ use crate::{
         ForeignMethodSignature, ForeignTypeInfo, TypeMap,
     },
     types::{
-        ForeignInterfaceMethod, ForeignerClassInfo, ForeignerMethod, MethodVariant, SelfTypeVariant,
+        ForeignInterfaceMethod, ForeignerClassInfo, ForeignerMethod, MethodVariant, SelfTypeVariant, ValidFnArg
     },
 };
 
@@ -53,7 +53,7 @@ pub(crate) fn foreign_to_rust_convert_method_inputs<
 >(
     conv_map: &mut TypeMap,
     src_id: SourceId,
-    method: &ForeignerMethod,
+    method: &ForeignerMethod<syn::FnArg>,
     f_method: &ForeignMethodSignature<FI = FTI>,
     arg_names: GI,
     func_ret_type: &str,
@@ -90,7 +90,7 @@ pub(crate) fn foreign_to_rust_convert_method_inputs<
 
 pub(crate) fn create_suitable_types_for_constructor_and_self(
     self_variant: SelfTypeVariant,
-    class: &ForeignerClassInfo,
+    class: &ForeignerClassInfo<ValidFnArg>,
     constructor_real_type: &Type,
 ) -> (Type, Type) {
     match self_variant {
@@ -135,7 +135,7 @@ pub(crate) fn rust_to_foreign_convert_method_inputs<
 >(
     conv_map: &mut TypeMap,
     src_id: SourceId,
-    method: &ForeignInterfaceMethod,
+    method: &ForeignInterfaceMethod<syn::FnArg>,
     f_method: &ForeignMethodSignature<FI = FTI>,
     arg_names: GI,
     func_ret_type: &str,

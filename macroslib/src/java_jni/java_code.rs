@@ -7,7 +7,7 @@ use crate::{
     java_jni::{fmt_write_err_map, method_name, JniForeignMethodSignature, NullAnnotation},
     typemap::ast::if_result_return_ok_err_types,
     typemap::TypeMap,
-    types::{ForeignEnumInfo, ForeignInterface, ForeignerClassInfo, MethodAccess, MethodVariant},
+    types::{ForeignEnumInfo, ForeignInterface, ForeignerClassInfo, MethodAccess, MethodVariant, ValidFnArg},
 };
 
 bitflags! {
@@ -79,7 +79,7 @@ public enum {enum_name} {{
 pub(in crate::java_jni) fn generate_java_code_for_interface(
     output_dir: &Path,
     package_name: &str,
-    interface: &ForeignInterface,
+    interface: &ForeignInterface<ValidFnArg>,
     methods_sign: &[JniForeignMethodSignature],
     use_null_annotation: Option<&str>,
 ) -> Result<(), String> {
@@ -135,7 +135,7 @@ pub(in crate::java_jni) fn generate_java_code(
     conv_map: &mut TypeMap,
     output_dir: &Path,
     package_name: &str,
-    class: &ForeignerClassInfo,
+    class: &ForeignerClassInfo<ValidFnArg>,
     methods_sign: &[JniForeignMethodSignature],
     null_annotation_package: Option<&str>,
 ) -> Result<(), String> {

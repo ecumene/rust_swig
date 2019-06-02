@@ -24,7 +24,7 @@ pub(crate) fn parse_foreigner_class(
     src_id: SourceId,
     config: &LanguageConfig,
     tokens: TokenStream,
-) -> Result<ForeignerClassInfo> {
+) -> Result<ForeignerClassInfo<syn::FnArg>> {
     match config {
         LanguageConfig::CppConfig(_) => {
             let mut class: CppClass =
@@ -51,14 +51,14 @@ pub(crate) fn parse_foreign_enum(src_id: SourceId, tokens: TokenStream) -> Resul
 pub(crate) fn parse_foreign_interface(
     src_id: SourceId,
     tokens: TokenStream,
-) -> Result<ForeignInterface> {
+) -> Result<ForeignInterface<syn::FnArg>> {
     let mut f_interface: ForeignInterfaceParser =
         syn::parse2(tokens).map_err(|err| DiagnosticError::from_syn_err(src_id, err))?;
     f_interface.0.src_id = src_id;
     Ok(f_interface.0)
 }
 
-struct CppClass(ForeignerClassInfo);
+struct CppClass(ForeignerClassInfo<syn::FnArg>);
 
 impl Parse for CppClass {
     fn parse(input: ParseStream) -> syn::Result<Self> {
@@ -66,7 +66,7 @@ impl Parse for CppClass {
     }
 }
 
-struct JavaClass(ForeignerClassInfo);
+struct JavaClass(ForeignerClassInfo<syn::FnArg>);
 
 impl Parse for JavaClass {
     fn parse(input: ParseStream) -> syn::Result<Self> {
@@ -148,7 +148,7 @@ fn parse_doc_comments(input: ParseStream) -> syn::Result<Vec<String>> {
     Ok(doc_comments)
 }
 
-fn do_parse_foreigner_class(lang: Language, input: ParseStream) -> syn::Result<ForeignerClassInfo> {
+fn do_parse_foreigner_class(lang: Language, input: ParseStream) -> syn::Result<ForeignerClassInfo<syn::FnArg>> {
     let Attrs {
         doc_comments: class_doc_comments,
         derive_list,
@@ -291,12 +291,13 @@ fn do_parse_foreigner_class(lang: Language, input: ParseStream) -> syn::Result<F
         }
         let args_parser;
         parenthesized!(args_parser in content);
-        let args_in: Punctuated<syn::FnArg, Token![,]> =
+        let args_parsed: Punctuated<syn::FnArg, Token![,]> =
             args_parser.parse_terminated(syn::FnArg::parse)?;
+        let args_in: Vec<syn::FnArg> = args_parsed.iter().map(|x|{*x}).collect();
         debug!("func in args {:?}", args_in);
         match func_type {
             MethodVariant::Constructor | MethodVariant::StaticMethod => {
-                let have_self_args = args_in.iter().any(|x| {
+                let have_self_args = args_parsed.iter().any(|x| {
                     use syn::FnArg::*;
                     match x {
                         SelfRef(_) | SelfValue(_) => true,
@@ -403,7 +404,7 @@ fn do_parse_foreigner_class(lang: Language, input: ParseStream) -> syn::Result<F
     }
 
     let copy_derived = derive_list.iter().any(|x| x == "Copy");
-    let has_clone = |m: &ForeignerMethod| {
+    let has_clone = |m: &ForeignerMethod<syn::FnArg>| {
         if let Some(seg) = m.rust_id.segments.last() {
             let seg = seg.into_value();
             seg.ident == "clone"
@@ -464,7 +465,7 @@ impl Parse for ForeignEnumInfoParser {
     }
 }
 
-struct ForeignInterfaceParser(ForeignInterface);
+struct ForeignInterfaceParser(ForeignInterface<syn::FnArg>);
 
 impl Parse for ForeignInterfaceParser {
     fn parse(input: ParseStream) -> syn::Result<Self> {
@@ -493,8 +494,9 @@ impl Parse for ForeignInterfaceParser {
 
             let args_parser;
             parenthesized!(args_parser in item_parser);
-            let args_in: Punctuated<syn::FnArg, Token![,]> =
+            let args_parsed: Punctuated<syn::FnArg, Token![,]> =
                 args_parser.parse_terminated(syn::FnArg::parse)?;
+            let args_in = args_parsed.iter().map(|x|{*x}).collect();
             debug!("cb func in args {:?}", args_in);
             let out_type: syn::ReturnType = item_parser.parse()?;
             item_parser.parse::<Token![;]>()?;

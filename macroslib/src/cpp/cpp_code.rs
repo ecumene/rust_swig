@@ -4,7 +4,7 @@ use crate::{
     cpp::{fmt_write_err_map, CppForeignMethodSignature},
     file_cache::FileWriteCache,
     typemap::FROM_VAR_TEMPLATE,
-    types::{ForeignEnumInfo, ForeignInterface, ForeignerClassInfo},
+    types::{ForeignEnumInfo, ForeignInterface, ForeignerClassInfo, ValidFnArg},
 };
 
 pub(in crate::cpp) fn generate_code_for_enum(
@@ -70,7 +70,7 @@ pub(in crate::cpp) fn doc_comments_to_c_comments(
 pub(in crate::cpp) fn generate_for_interface(
     output_dir: &Path,
     namespace_name: &str,
-    interface: &ForeignInterface,
+    interface: &ForeignInterface<ValidFnArg>,
     f_methods: &[CppForeignMethodSignature],
 ) -> Result<(), String> {
     use std::fmt::Write;
@@ -273,7 +273,7 @@ pub(in crate::cpp) fn c_generate_args_with_types(
     Ok(buf)
 }
 
-pub(in crate::cpp) fn c_class_type(class: &ForeignerClassInfo) -> String {
+pub(in crate::cpp) fn c_class_type(class: &ForeignerClassInfo<ValidFnArg>) -> String {
     format!("{}Opaque", class.name)
 }
 

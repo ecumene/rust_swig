@@ -21,7 +21,7 @@ use crate::{
         },
         FROM_VAR_TEMPLATE, TO_VAR_TEMPLATE,
     },
-    types::{ForeignerClassInfo, MethodAccess, MethodVariant, SelfTypeVariant},
+    types::{ForeignerClassInfo, MethodAccess, MethodVariant, SelfTypeVariant, ValidFnArg},
     TypeMap,
 };
 
@@ -30,7 +30,7 @@ pub(in crate::cpp) fn generate(
     output_dir: &Path,
     namespace_name: &str,
     separate_impl_headers: bool,
-    class: &ForeignerClassInfo,
+    class: &ForeignerClassInfo<ValidFnArg>,
     methods_sign: &[CppForeignMethodSignature],
 ) -> Result<Vec<TokenStream>> {
     use std::fmt::Write;
@@ -792,7 +792,7 @@ pub extern "C" fn {func_name}({decl_func_args}) -> {c_ret_type} {{
 fn generate_method(
     conv_map: &mut TypeMap,
     mc: &MethodContext,
-    class: &ForeignerClassInfo,
+    class: &ForeignerClassInfo<ValidFnArg>,
     self_variant: SelfTypeVariant,
     this_type_for_method: &RustType,
 ) -> Result<Vec<TokenStream>> {
