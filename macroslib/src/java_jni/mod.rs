@@ -83,7 +83,6 @@ impl From<ForeignTypeInfo> for JavaForeignTypeInfo {
 struct JniForeignMethodSignature {
     output: ForeignTypeInfo,
     input: Vec<JavaForeignTypeInfo>,
-    input_name_lookup: Vec<String>,
 }
 
 impl ForeignMethodSignature for JniForeignMethodSignature {
@@ -342,7 +341,7 @@ fn find_suitable_ftypes_for_interace_methods(
             },
             _ => unimplemented!(),
         };
-        f_methods.push(JniForeignMethodSignature { output, input, input_name_lookup: method.input_name_lookup.clone() });
+        f_methods.push(JniForeignMethodSignature { output, input });
     }
     Ok(f_methods)
 }
@@ -398,7 +397,7 @@ fn find_suitable_foreign_types_for_methods(
                 }
             },
         };
-        ret.push(JniForeignMethodSignature { output, input, input_name_lookup: method.input_name_lookup.clone() });
+        ret.push(JniForeignMethodSignature { output, input });
     }
     Ok(ret)
 }
