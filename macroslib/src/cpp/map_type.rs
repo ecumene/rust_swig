@@ -20,7 +20,7 @@ use crate::{
         if_vec_return_elem_type,
     },
     typemap::{ty::RustType, ForeignTypeInfo, FROM_VAR_TEMPLATE, TO_VAR_TEMPLATE},
-    types::{ForeignEnumInfo, ForeignerClassInfo},
+    types::{ForeignEnumInfo, ForeignerClassInfo, ValidFnArg},
     CppConfig, CppOptional, CppVariant, TypeMap,
 };
 
@@ -263,7 +263,7 @@ fn special_type(
 
 fn foreign_class_foreign_name(
     conv_map: &TypeMap,
-    foreign_class: &ForeignerClassInfo,
+    foreign_class: &ForeignerClassInfo<ValidFnArg>,
     foreign_class_span: SourceIdSpan,
     readonly_fptr: bool,
 ) -> Result<ForeignTypeInfo> {
@@ -1278,7 +1278,7 @@ fn handle_result_with_primitive_type_as_ok_ty(
 
 pub(in crate::cpp) fn calc_this_type_for_method(
     _: &TypeMap,
-    class: &ForeignerClassInfo,
+    class: &ForeignerClassInfo<ValidFnArg>,
 ) -> Option<Type> {
     class.constructor_ret_type.clone()
 }

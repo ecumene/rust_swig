@@ -85,7 +85,7 @@ pub(crate) struct TypeMap {
     rust_names_map: RustTypeNameToGraphIdx,
     utils_code: Vec<syn::Item>,
     generic_edges: Vec<GenericTypeConv>,
-    foreign_classes: Vec<ForeignerClassInfo>,
+    foreign_classes: Vec<ForeignerClassInfo<syn::FnArg>>,
     exported_enums: FxHashMap<SmolStr, ForeignEnumInfo>,
     /// How to use trait to convert types, Trait Name -> Code
     traits_usage_code: FxHashMap<Ident, String>,
@@ -465,7 +465,7 @@ impl TypeMap {
         &self,
         may_be_self_ty: &RustType,
         if_ref_search_reftype: bool,
-    ) -> Option<&ForeignerClassInfo> {
+    ) -> Option<&ForeignerClassInfo<syn::FnArg>> {
         let type_name = match may_be_self_ty.ty {
             syn::Type::Reference(syn::TypeReference { ref elem, .. }) if if_ref_search_reftype => {
                 normalize_ty_lifetimes(&*elem)
@@ -602,7 +602,7 @@ impl TypeMap {
 
     /// find correspoint to rust foreign type (extended)
     pub(crate) fn map_through_conversation_to_foreign<
-        F: Fn(&TypeMap, &ForeignerClassInfo) -> Option<Type>,
+        F: Fn(&TypeMap, &ForeignerClassInfo<syn::FnArg>) -> Option<Type>,
     >(
         &mut self,
         rust_ty: &RustType,
@@ -820,12 +820,12 @@ impl TypeMap {
     }
 
     pub(crate) fn find_foreigner_class_with_such_this_type<
-        F: Fn(&TypeMap, &ForeignerClassInfo) -> Option<Type>,
+        F: Fn(&TypeMap, &ForeignerClassInfo<syn::FnArg>) -> Option<Type>,
     >(
         &self,
         this_ty: &Type,
         get_this_type: F,
-    ) -> Option<&ForeignerClassInfo> {
+    ) -> Option<&ForeignerClassInfo<syn::FnArg>> {
         let this_name = normalize_ty_lifetimes(this_ty);
         for fc in &self.foreign_classes {
             if let Some(this_type_for_method) = get_this_type(self, fc) {
@@ -838,7 +838,7 @@ impl TypeMap {
         None
     }
 
-    pub(crate) fn register_foreigner_class(&mut self, class: &ForeignerClassInfo) {
+    pub(crate) fn register_foreigner_class(&mut self, class: &ForeignerClassInfo<syn::FnArg>) {
         self.foreign_classes.push(class.clone());
     }
 

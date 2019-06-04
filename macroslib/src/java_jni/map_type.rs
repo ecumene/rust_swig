@@ -11,7 +11,7 @@ use crate::{
         ty::RustType,
         ForeignTypeInfo, FROM_VAR_TEMPLATE, TO_VAR_TEMPLATE,
     },
-    types::{ForeignEnumInfo, ForeignerClassInfo},
+    types::{ForeignEnumInfo, ForeignerClassInfo, ValidFnArg},
     TypeMap,
 };
 
@@ -153,7 +153,7 @@ pub(in crate::java_jni) fn special_type(
 
 fn calc_converter_for_foreign_class_arg(
     conv_map: &TypeMap,
-    foreigner_class: &ForeignerClassInfo,
+    foreigner_class: &ForeignerClassInfo<ValidFnArg>,
     arg_ty: &RustType,
 ) -> JavaForeignTypeInfo {
     let this_ty = calc_this_type_for_method(conv_map, foreigner_class).unwrap();

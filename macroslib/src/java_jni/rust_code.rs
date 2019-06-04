@@ -24,14 +24,14 @@ use crate::{
     },
     types::{
         ForeignEnumInfo, ForeignInterface, ForeignerClassInfo, ForeignerMethod, MethodVariant,
-        SelfTypeVariant,
+        SelfTypeVariant, ValidFnArg
     },
     TypeMap,
 };
 
 struct MethodContext<'a> {
-    class: &'a ForeignerClassInfo,
-    method: &'a ForeignerMethod,
+    class: &'a ForeignerClassInfo<ValidFnArg>,
+    method: &'a ForeignerMethod<ValidFnArg>,
     f_method: &'a JniForeignMethodSignature,
     jni_func_name: &'a str,
     decl_func_args: &'a str,
@@ -42,7 +42,7 @@ struct MethodContext<'a> {
 pub(in crate::java_jni) fn generate_rust_code(
     conv_map: &mut TypeMap,
     package_name: &str,
-    class: &ForeignerClassInfo,
+    class: &ForeignerClassInfo<ValidFnArg>,
     f_methods_sign: &[JniForeignMethodSignature],
 ) -> Result<Vec<TokenStream>> {
     //to handle java method overload
@@ -354,7 +354,7 @@ pub(in crate::java_jni) fn generate_interface(
     package_name: &str,
     conv_map: &mut TypeMap,
     pointer_target_width: usize,
-    interface: &ForeignInterface,
+    interface: &ForeignInterface<ValidFnArg>,
     methods_sign: &[JniForeignMethodSignature],
 ) -> Result<Vec<TokenStream>> {
     use std::fmt::Write;
@@ -525,7 +525,7 @@ lazy_static! {
 
 fn generate_jni_func_name(
     package_name: &str,
-    class: &ForeignerClassInfo,
+    class: &ForeignerClassInfo<ValidFnArg>,
     java_method_name: &str,
     f_method: &JniForeignMethodSignature,
     overloaded: bool,

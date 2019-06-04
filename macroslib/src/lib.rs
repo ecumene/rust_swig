@@ -42,7 +42,7 @@ use crate::{
     error::{panic_on_parse_error, DiagnosticError, Result},
     source_registry::{SourceId, SourceRegistry},
     typemap::{ast::DisplayToTokens, TypeMap},
-    types::{ForeignEnumInfo, ForeignInterface, ForeignerClassInfo},
+    types::{ForeignEnumInfo, ForeignInterface, ForeignerClassInfo, ValidFnArg},
 };
 
 /// Calculate target pointer width from environment variable
@@ -218,8 +218,8 @@ static FOREIGN_INTERFACE: &str = "foreign_interface";
 
 enum OutputCode {
     Item(syn::Item),
-    Class(ForeignerClassInfo),
-    Interface(ForeignInterface),
+    Class(ForeignerClassInfo<syn::FnArg>),
+    Interface(ForeignInterface<syn::FnArg>),
     Enum(ForeignEnumInfo),
 }
 
@@ -491,13 +491,13 @@ impl Generator {
 }
 
 trait LanguageGenerator {
-    fn register_class(&self, conv_map: &mut TypeMap, class: &ForeignerClassInfo) -> Result<()>;
+    fn register_class(&self, conv_map: &mut TypeMap, class: &ForeignerClassInfo<ValidFnArg>) -> Result<()>;
 
     fn generate(
         &self,
         conv_map: &mut TypeMap,
         pointer_target_width: usize,
-        class: &ForeignerClassInfo,
+        class: &ForeignerClassInfo<ValidFnArg>,
     ) -> Result<Vec<TokenStream>>;
 
     fn generate_enum(
@@ -511,7 +511,7 @@ trait LanguageGenerator {
         &self,
         conv_map: &mut TypeMap,
         pointer_target_width: usize,
-        interace: &ForeignInterface,
+        interace: &ForeignInterface<ValidFnArg>,
     ) -> Result<Vec<TokenStream>>;
 
     /// Called before any other methods and only once
